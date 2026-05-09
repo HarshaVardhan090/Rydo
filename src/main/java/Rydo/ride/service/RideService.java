@@ -2,6 +2,8 @@ package Rydo.ride.service;
 
 import Rydo.ride.dto.RideRequest;
 import Rydo.ride.dto.RideResponse;
+import Rydo.ride.dto.DriverEarningsResponse;
+
 import Rydo.ride.entity.Ride;
 import Rydo.ride.entity.RideStatus;
 import Rydo.ride.repository.RideRepository;
@@ -54,6 +56,43 @@ public class RideService {
         ride.setStatus(newStatus);
         Ride updatedRide = rideRepository.save(ride);
         return mapToResponse(updatedRide);
+    }
+
+    public List<RideResponse> getRidesByUserId(Long userId) {
+        return rideRepository.findByUserId(userId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<RideResponse> getRidesByDriverId(Long driverId) {
+        return rideRepository.findByDriverId(driverId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public DriverEarningsResponse getTotalEarningsByDriverId(Long driverId) {
+        List<Ride> driverRides = rideRepository.findByDriverId(driverId);
+        
+        long totalCompletedRides = 0;
+        double totalEarnings = 0.0;
+
+        for (Ride ride : driverRides) {
+            if (ride.getStatus() == RideStatus.COMPLETED) {
+                totalCompletedRides++;
+                if (ride.getFare() != null) {
+                    totalEarnings += ride.getFare();
+                }
+            }
+        }
+
+        DriverEarningsResponse response = new DriverEarningsResponse();
+        response.setDriverId(driverId);
+        response.setTotalCompletedRides(totalCompletedRides);
+        response.setTotalEarnings(totalEarnings);
+
+        return response;
     }
 
     // Helper method to convert an Entity to a DTO
